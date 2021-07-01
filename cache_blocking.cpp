@@ -33,6 +33,7 @@ double cache_blocking(Matrix* a, Matrix* b, Matrix* c) {
     int sz = a->sz;
     int BLOCK = 32;
     chrono::system_clock::time_point start, end;
+    
     start = chrono::system_clock::now();
     for(int i = 0 ; i < sz ; i+=BLOCK)
     for(int j = 0 ; j < sz ; j+=BLOCK)
