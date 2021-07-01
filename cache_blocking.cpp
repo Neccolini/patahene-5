@@ -64,15 +64,30 @@ void mat_set(Matrix* Mat, double val) {
         }
     }
 }
+void mat_clear(Matrix* Mat) {
+    int sz = Mat->sz;
+    for(int i = 0; i < sz ; ++i) {
+        for(int j = 0 ; j < sz ; ++j) {
+            MR(Mat, i, j) = 0.0;
+        }
+    }
+}
 int main() {
     Matrix a, b, c;
     int sz = 512;
     int val = 99999;
+    int repeat = 10;
     newMat(&a, sz);
     newMat(&b, sz);
     newMat(&c, sz);
     mat_set(&a, val);
     mat_set(&b, val);
-    printf("no blocking: %.3lf ms\n", matrix_multiply(&a, &b, &c));
-    printf("blocking: %.3lf ms\n", cache_blocking(&a, &b, &c));
+    double sum1 = 0, sum2 = 0;
+    for(int i = 0 ; i < repeat ; ++i) {
+        mat_clear(&c);
+        sum1 += matrix_multiply(&a, &b, &c);
+        sum2 += cache_blocking(&a, &b, &c);
+    }
+    printf("no blocking: %.3lf ms\n", sum1 / repeat);
+    printf("blocking: %.3lf ms\n", sum2 / repeat);
 }
