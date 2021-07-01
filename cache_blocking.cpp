@@ -50,6 +50,31 @@ double cache_blocking(Matrix* a, Matrix* b, Matrix* c) {
     double time = static_cast<double>(chrono::duration_cast<chrono::microseconds>(end - start).count() / 1000.0);
     return time;
 }
+double cache_blocking_loop_unroll(Matrix* a, Matrix* b, Matrix* c) {
+    assert(a->sz == b->sz);
+    int sz = a->sz;
+    int BLOCK = 32;
+    chrono::system_clock::time_point start, end;
+    
+    start = chrono::system_clock::now();
+    for(int i = 0 ; i < sz ; i+=BLOCK)
+    for(int j = 0 ; j < sz ; j+=BLOCK)
+    for(int k = 0 ; k < sz ; k+=BLOCK)
+        for(int ii = i ; ii < i + BLOCK ; ++ii) {
+            for(int jj = j ; jj < j + BLOCK ; ++jj) {
+                for(int kk = k ; kk < k + BLOCK ; kk+=4) {
+                    MR(c, ii, jj) += MR(a, ii, kk) * MR(b, kk, jj);
+                    MR(c, ii, jj) += MR(a, ii, kk+1) * MR(b, kk+1, jj);
+                    MR(c, ii, jj) += MR(a, ii, kk+2) * MR(b, kk+2, jj);
+                    MR(c, ii, jj) += MR(a, ii, kk+3) * MR(b, kk+3, jj);
+                }
+            }
+        }
+    end = chrono::system_clock::now();
+
+    double time = static_cast<double>(chrono::duration_cast<chrono::microseconds>(end - start).count() / 1000.0);
+    return time;
+}
 int newMat(Matrix* Mat, int sz) {
     Mat->sz = sz;
     Mat->m = NULL;
@@ -82,12 +107,16 @@ int main() {
     newMat(&c, sz);
     mat_set(&a, val);
     mat_set(&b, val);
-    double sum1 = 0, sum2 = 0;
+    double sum1 = 0, sum2 = 0, sum3 = 0;
     for(int i = 0 ; i < repeat ; ++i) {
         mat_clear(&c);
         sum1 += matrix_multiply(&a, &b, &c);
+        mat_clear(&c);
         sum2 += cache_blocking(&a, &b, &c);
+        mat_clear(&c);
+        sum3 += cache_blocking_loop_unroll(&a, &b, &c);
     }
-    printf("no blocking: %.3lf ms\n", sum1 / repeat);
+    printf("original: %.3lf ms\n", sum1 / repeat);
     printf("blocking: %.3lf ms\n", sum2 / repeat);
+    printf("blocking & loop unroll: %.3lf ms\n", sum3 / repeat);
 }
